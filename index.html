@@ -355,12 +355,21 @@
   .type-card .ch{ color: var(--text-3); flex-shrink:0; }
   .type-card .body{ flex:1; min-width:0; }
 
-  /* ============== ITEMS SELECT ============== */
+  /* ============== ITEMS SELECT (multi) ============== */
+  .items-toolbar{
+    display:flex; justify-content:space-between; align-items:center;
+    padding: 4px 20px 12px;
+  }
+  .items-count{
+    font-weight: 500; font-size: 14px; color: var(--text-2);
+  }
   .item-pickable{
     display:flex; gap:12px; padding: 14px 16px; align-items:flex-start; cursor:pointer;
     border-bottom: 1px solid var(--line);
+    transition: background .15s ease;
   }
   .item-pickable:active{ background: var(--bg-alt); }
+  .item-pickable.checked{ background: #F4F6FF; }
   .radio{
     width:24px; height:24px; border-radius:50%; border: 2px solid var(--text-3);
     flex-shrink:0; margin-top: 30px; display:flex; align-items:center; justify-content:center;
@@ -369,6 +378,20 @@
   .radio.checked{ border-color: var(--primary); background: var(--primary); }
   .radio.checked::after{
     content:""; width:8px; height:8px; border-radius:50%; background:#fff;
+  }
+  .checkbox{
+    width:24px; height:24px; border-radius: 7px; border: 2px solid var(--text-3);
+    flex-shrink:0; margin-top: 30px; display:flex; align-items:center; justify-content:center;
+    transition: border-color .15s ease, background .15s ease;
+    background: #fff;
+  }
+  .checkbox.checked{
+    border-color: var(--primary); background: var(--primary);
+  }
+  .checkbox.checked::after{
+    content:""; width: 12px; height: 6px;
+    border-left: 2px solid #fff; border-bottom: 2px solid #fff;
+    transform: rotate(-45deg) translate(1px, -1px);
   }
 
   /* ============== BOOST CONFIG ============== */
@@ -1461,17 +1484,22 @@
           <button class="icon-btn" onclick="go('promo-types')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
           </button>
-          <div class="title">Выберите объявление</div>
+          <div class="title">Выберите объявления</div>
           <div class="spacer-r"></div>
         </div>
 
         <div style="padding: 4px 20px 14px;">
           <div class="h2" id="items-title">Доступно для буста</div>
-          <div class="subtle" id="items-sub" style="margin-top:6px;">Показаны только объявления, где доступен этот тип продвижения</div>
+          <div class="subtle" id="items-sub" style="margin-top:6px;">Можно выбрать несколько — продвижение применится ко всем сразу</div>
+        </div>
+
+        <div class="items-toolbar">
+          <span class="items-count" id="items-count">Выбрано: 1</span>
+          <span class="link" id="items-toggle-all" onclick="toggleAllItems()">Выбрать все</span>
         </div>
 
         <div id="items-list">
-          <div class="item-pickable" onclick="pickItem(this, 0)">
+          <div class="item-pickable checked" onclick="toggleItem(this)">
             <div class="item-thumb iphone" style="width:64px; height:64px;">
               <div class="item-thumb-em" style="font-size:28px;">📱</div>
             </div>
@@ -1483,10 +1511,10 @@
                 <span class="item-stat">♡ 27</span>
               </div>
             </div>
-            <div class="radio checked"></div>
+            <div class="checkbox checked"></div>
           </div>
 
-          <div class="item-pickable" onclick="pickItem(this, 1)">
+          <div class="item-pickable" onclick="toggleItem(this)">
             <div class="item-thumb shoe" style="width:64px; height:64px;">
               <div class="item-thumb-em" style="font-size:28px;">👟</div>
             </div>
@@ -1498,10 +1526,10 @@
                 <span class="item-stat">♡ 25</span>
               </div>
             </div>
-            <div class="radio"></div>
+            <div class="checkbox"></div>
           </div>
 
-          <div class="item-pickable" onclick="pickItem(this, 2)">
+          <div class="item-pickable" onclick="toggleItem(this)">
             <div class="item-thumb plate" style="width:64px; height:64px;">
               <div class="item-thumb-em" style="font-size:28px;">🍽️</div>
             </div>
@@ -1513,10 +1541,10 @@
                 <span class="item-stat">♡ 8</span>
               </div>
             </div>
-            <div class="radio"></div>
+            <div class="checkbox"></div>
           </div>
 
-          <div class="item-pickable" onclick="pickItem(this, 3)">
+          <div class="item-pickable" onclick="toggleItem(this)">
             <div class="item-thumb" style="width:64px; height:64px; background: linear-gradient(135deg, #C3B69C, #6E5B3F);">
               <div class="item-thumb-em" style="font-size:28px;">🎧</div>
             </div>
@@ -1528,12 +1556,12 @@
                 <span class="item-stat">♡ 12</span>
               </div>
             </div>
-            <div class="radio"></div>
+            <div class="checkbox"></div>
           </div>
         </div>
 
         <div class="cta-dock">
-          <button class="btn" onclick="goNextAfterItem()">Продолжить</button>
+          <button class="btn" id="items-cta" onclick="goNextAfterItem()">Продолжить · 1 объявление</button>
         </div>
       </div>
 
@@ -1588,9 +1616,9 @@
         <div class="cta-dock">
           <div class="total-row" style="padding: 8px 4px 0;">
             <div class="lbl">Итого</div>
-            <div class="price"><span class="strike">5 750 UZS</span>5 000 UZS</div>
+            <div class="price" id="boost-total"><span class="strike" id="boost-strike">5 750 UZS</span><span id="boost-price">5 000 UZS</span></div>
           </div>
-          <button class="btn" onclick="goPay('boost', 5000, '5-кратный буст на 7 дней')">Продолжить</button>
+          <button class="btn" onclick="goPayBoost()">Продолжить</button>
           <button class="btn btn-ghost" onclick="go('promo-hub')">Пропустить</button>
         </div>
       </div>
@@ -2074,6 +2102,9 @@
     // Bottom nav only on screens that should have it
     const navEl = document.getElementById('bottom-nav-el');
     if (navEl) navEl.style.display = (name === 'profile') ? 'flex' : 'none';
+    // Per-screen hooks
+    if (name === 'boost-config') updateBoostTotal();
+    if (name === 'items-select') updateItemsState();
   }
 
   function goPromoType(type){
@@ -2098,19 +2129,113 @@
     document.getElementById('items-title').textContent = titles[promoTypeChosen] || 'Доступно для продвижения';
   }
 
-  function pickItem(el, idx){
-    // single-select within items list
-    el.parentElement.querySelectorAll('.item-pickable .radio').forEach(r => r.classList.remove('checked'));
-    el.querySelector('.radio').classList.add('checked');
+  // ============== ITEMS SELECT (multi) ==============
+  // Per-item base prices used for boost/visvas/tg
+  const ITEM_PRICES = {
+    boost:  5000,
+    visvas: 3500,
+    tg:     8000,
+  };
+
+  function toggleItem(el){
+    el.classList.toggle('checked');
+    el.querySelector('.checkbox').classList.toggle('checked');
+    updateItemsState();
+  }
+
+  function toggleAllItems(){
+    const list = document.getElementById('items-list');
+    const items = list.querySelectorAll('.item-pickable');
+    const allChecked = Array.from(items).every(it => it.classList.contains('checked'));
+    items.forEach(it => {
+      if (allChecked){
+        it.classList.remove('checked');
+        it.querySelector('.checkbox').classList.remove('checked');
+      } else {
+        it.classList.add('checked');
+        it.querySelector('.checkbox').classList.add('checked');
+      }
+    });
+    updateItemsState();
+  }
+
+  function updateItemsState(){
+    const list = document.getElementById('items-list');
+    const items = list.querySelectorAll('.item-pickable');
+    const checked = list.querySelectorAll('.item-pickable.checked').length;
+    const total = items.length;
+
+    // counter
+    const countEl = document.getElementById('items-count');
+    if (countEl) countEl.textContent = `Выбрано: ${checked} из ${total}`;
+
+    // toggle-all label
+    const toggleAll = document.getElementById('items-toggle-all');
+    if (toggleAll) toggleAll.textContent = (checked === total) ? 'Снять выбор' : 'Выбрать все';
+
+    // CTA label + state
+    const cta = document.getElementById('items-cta');
+    if (cta){
+      cta.disabled = (checked === 0);
+      cta.style.opacity = (checked === 0) ? '.45' : '1';
+      cta.style.pointerEvents = (checked === 0) ? 'none' : '';
+      const word = pluralize(checked, ['объявление','объявления','объявлений']);
+      cta.textContent = checked === 0 ? 'Выберите объявления' : `Продолжить · ${checked} ${word}`;
+    }
+  }
+
+  function pluralize(n, forms){
+    n = Math.abs(n) % 100;
+    const n1 = n % 10;
+    if (n > 10 && n < 20) return forms[2];
+    if (n1 > 1 && n1 < 5) return forms[1];
+    if (n1 === 1) return forms[0];
+    return forms[2];
+  }
+
+  function selectedCount(){
+    return document.querySelectorAll('#items-list .item-pickable.checked').length;
+  }
+
+  function goPayBoost(){
+    const count = selectedCount() || 1;
+    const base = 5000;
+    const total = base * count;
+    const label = count === 1
+      ? '5-кратный буст на 7 дней'
+      : `5-кратный буст на 7 дней · ${count} объявления`;
+    goPay('boost', total, label);
+  }
+
+  function updateBoostTotal(){
+    const count = selectedCount() || 1;
+    const fmt = (p) => p.toLocaleString('ru-RU').replace(/,/g,' ') + ' UZS';
+    const priceEl = document.getElementById('boost-price');
+    const strikeEl = document.getElementById('boost-strike');
+    if (priceEl) priceEl.textContent = fmt(5000 * count);
+    if (strikeEl) strikeEl.textContent = fmt(5750 * count);
   }
 
   function goNextAfterItem(){
-    // boost → boost-config, visvas → checkout with preview, tg → checkout
+    const count = selectedCount();
+    if (count === 0) return;
+    // boost → still a config screen (settings apply to all selected)
+    // visvas/tg → direct to checkout, price multiplied by count
     if (promoTypeChosen === 'boost') go('boost-config');
     else if (promoTypeChosen === 'visvas') {
-      goPay('visvas', 3500, 'Выделение цветом на 7 дней');
+      const base = ITEM_PRICES.visvas;
+      const total = base * count;
+      const label = count === 1
+        ? 'Выделение цветом на 7 дней'
+        : `Выделение цветом на 7 дней · ${count} объявления`;
+      goPay('visvas', total, label);
     } else {
-      goPay('tg', 8000, 'Реклама в Telegram, 7 дней');
+      const base = ITEM_PRICES.tg;
+      const total = base * count;
+      const label = count === 1
+        ? 'Реклама в Telegram, 7 дней'
+        : `Реклама в Telegram, 7 дней · ${count} объявления`;
+      goPay('tg', total, label);
     }
   }
 
